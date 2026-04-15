@@ -3,6 +3,9 @@ import "../styles/globals.css";
 export const metadata = {
   title: "BANALATA Bengali Desi Dhaba",
   description: "Traditional Bengali Desi Dhaba",
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({ children }) {
