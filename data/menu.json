@@ -1,0 +1,47 @@
+[
+  {
+    "category": "Starters",
+    "items": [
+      {
+        "name": "Chicken Pakora",
+        "price": 120,
+        "description": "Crispy fried chicken bites"
+      },
+      {
+        "name": "Veg Chop",
+        "price": 80,
+        "description": "Traditional Bengali snack"
+      }
+    ]
+  },
+  {
+    "category": "Main Course",
+    "items": [
+      {
+        "name": "Chicken Kosha",
+        "price": 220,
+        "description": "Spicy Bengali chicken curry"
+      },
+      {
+        "name": "Fish Curry",
+        "price": 200,
+        "description": "Fresh fish in mustard gravy"
+      }
+    ]
+  },
+  {
+    "category": "Beverages",
+    "items": [
+      {
+        "name": "Lassi",
+        "price": 60,
+        "description": "Sweet yogurt drink"
+      },
+      {
+        "name": "Tea",
+        "price": 20,
+        "description": "Traditional Indian chai"
+      }
+    ]
+  }
+]
