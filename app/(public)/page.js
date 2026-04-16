@@ -93,11 +93,18 @@ export default function Home() {
     <div className="flex flex-col min-h-screen selection:bg-red-200">
       {/* 🌟 PREMIUM HERO SECTION 🌟 */}
       <section className="relative min-h-[95vh] flex items-center justify-center text-center overflow-hidden">
-        {/* Dynamic Background with Paralax Feel */}
-        <div
-          className="absolute inset-0 bg-cover bg-center z-0 scale-110 animate-subtle-zoom"
-          style={{ backgroundImage: "url('/images/hero.png')" }}
-        ></div>
+        {/* Optimized Next.js Image Background */}
+        <Image
+          src="/images/hero.png"
+          alt="Banalata Bengali Dhaba"
+          fill
+          priority
+          className="object-cover z-0 scale-110 animate-subtle-zoom"
+          sizes="100vw"
+        />
+        
+        {/* Dark Overlay to make text pop */}
+        <div className="absolute inset-0 bg-black/40 z-10"></div>
         {/* Graded Radial Overlay for Text Readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90 z-10"></div>
 
