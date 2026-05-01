@@ -6,6 +6,7 @@ import { generateCouponCode, saveCoupon } from "@/lib/coupon";
 import Link from "next/link";
 import { ADMIN_EMAILS } from "@/lib/admins";
 import { fetchPendingImages, moderateImage } from "@/lib/gallery";
+import { processMenuImage } from "@/lib/imageProcessor";
 
 export default function AdminPage({ searchParams }) {
   // Next.js 15 requires unwrapping searchParams!
@@ -19,7 +20,17 @@ export default function AdminPage({ searchParams }) {
   // Menu State
   const [menuItems, setMenuItems] = useState([]);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
-  const [menuForm, setMenuForm] = useState({ id: null, name: "", category: "Starters", price: "", description: "" });
+  const [menuForm, setMenuForm] = useState({ 
+    id: null, 
+    name: "", 
+    category: "Starters", 
+    price: "", 
+    description: "", 
+    menu_type: "regular",
+    image_url: "" 
+  });
+  const [menuImage, setMenuImage] = useState(null);
+  const [menuImagePreview, setMenuImagePreview] = useState(null);
   
   // Coupon State
   const [coupons, setCoupons] = useState([]);
@@ -27,6 +38,10 @@ export default function AdminPage({ searchParams }) {
 
   // Gallery State
   const [pendingImages, setPendingImages] = useState([]);
+  const [approvedImages, setApprovedImages] = useState([]);
+  const [galleryUploadForm, setGalleryUploadForm] = useState({ description: "" });
+  const [galleryImage, setGalleryImage] = useState(null);
+  const [galleryTab, setGalleryTab] = useState('pending'); // 'pending' or 'live'
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -59,8 +74,27 @@ export default function AdminPage({ searchParams }) {
   };
 
   const fetchGallery = async () => {
-    const data = await fetchPendingImages();
-    setPendingImages(data || []);
+    const pending = await fetchPendingImages();
+    const approved = await fetchApprovedImages();
+    setPendingImages(pending || []);
+    setApprovedImages(approved || []);
+  };
+
+  const handleAdminGalleryUpload = async (e) => {
+    e.preventDefault();
+    if (!galleryImage) return alert("Select an image first!");
+    setLoading(true);
+    try {
+      await uploadGalleryImage(galleryImage, galleryUploadForm.description, user.id, true);
+      setGalleryImage(null);
+      setGalleryUploadForm({ description: "" });
+      fetchGallery();
+      alert("Photo uploaded directly to live gallery!");
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGalleryAction = async (id, action) => {
@@ -71,26 +105,55 @@ export default function AdminPage({ searchParams }) {
   // --- Menu Handlers ---
   const handleMenuSubmit = async (e) => {
     e.preventDefault();
-    const itemData = {
-      name: menuForm.name,
-      category: menuForm.category,
-      price: parseInt(menuForm.price),
-      description: menuForm.description
-    };
+    setLoading(true);
+    
+    try {
+      let finalImageUrl = menuForm.image_url;
 
-    let result;
-    if (menuForm.id) {
-      result = await supabase.from('menu').update(itemData).eq('id', menuForm.id);
-    } else {
-      result = await supabase.from('menu').insert([itemData]);
-    }
+      // 1. Upload Image if a new one is selected
+      if (menuImage) {
+        const fileName = `${Date.now()}-${menuImage.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('menu-images')
+          .upload(fileName, menuImage);
 
-    if (result.error) {
-      alert("Error: " + result.error.message);
-    } else {
-      setMenuForm({ id: null, name: "", category: "Starters", price: "", description: "" });
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('menu-images')
+          .getPublicUrl(fileName);
+        
+        finalImageUrl = publicUrl;
+      }
+
+      const itemData = {
+        name: menuForm.name,
+        category: menuForm.category,
+        price: parseInt(menuForm.price),
+        description: menuForm.description,
+        menu_type: menuForm.menu_type,
+        image_url: finalImageUrl
+      };
+
+      let result;
+      if (menuForm.id) {
+        result = await supabase.from('menu').update(itemData).eq('id', menuForm.id);
+      } else {
+        result = await supabase.from('menu').insert([itemData]);
+      }
+
+      if (result.error) throw result.error;
+
+      setMenuForm({ id: null, name: "", category: "Starters", price: "", description: "", menu_type: "regular", image_url: "" });
+      setMenuImage(null);
+      setMenuImagePreview(null);
       setIsCustomCategory(false);
       fetchMenu();
+      alert("Dish saved successfully!");
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -230,6 +293,54 @@ export default function AdminPage({ searchParams }) {
                     className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-red-500 outline-none font-bold min-h-[100px] placeholder:text-zinc-300"
                     value={menuForm.description} onChange={e => setMenuForm({ ...menuForm, description: e.target.value })}
                   />
+
+                  {/* Menu Type Toggle */}
+                  <div className="flex bg-zinc-100 p-1 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setMenuForm({...menuForm, menu_type: 'regular'})}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.menu_type === 'regular' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
+                    >Regular</button>
+                    <button
+                      type="button"
+                      onClick={() => setMenuForm({...menuForm, menu_type: 'party'})}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.menu_type === 'party' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
+                    >Party Package</button>
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Dish Image</label>
+                    <div className="relative group overflow-hidden rounded-2xl border-2 border-dashed border-zinc-200 aspect-video flex items-center justify-center bg-zinc-50">
+                      {(menuImagePreview || menuForm.image_url) ? (
+                        <img src={menuImagePreview || menuForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center">
+                          <span className="text-3xl block mb-2">📸</span>
+                          <span className="text-[8px] font-black uppercase text-zinc-400">Click to upload</span>
+                        </div>
+                      )}
+                      <input 
+                        type="file" accept="image/*" 
+                        onChange={async (e) => {
+                          const f = e.target.files[0];
+                          if (f) {
+                            try {
+                              // 🔥 MAGIC HAPPENS HERE: Auto-crop and compress
+                              const processedBlob = await processMenuImage(f);
+                              const processedFile = new File([processedBlob], f.name, { type: "image/webp" });
+                              
+                              setMenuImage(processedFile);
+                              setMenuImagePreview(URL.createObjectURL(processedFile));
+                            } catch (err) {
+                              alert("Failed to process image. Try a different one.");
+                            }
+                          }
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
                   <button type="submit" className="w-full bg-red-600 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-red-700 transition-all uppercase tracking-widest text-sm">
                     {menuForm.id ? "UPDATE ITEM" : "ADD TO MENU"}
                   </button>
@@ -252,7 +363,12 @@ export default function AdminPage({ searchParams }) {
                       ₹{item.price}
                     </div>
                     <div>
-                      <h4 className="text-lg font-black text-zinc-800 tracking-tight leading-none mb-1 uppercase">{item.name}</h4>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-lg font-black text-zinc-800 tracking-tight leading-none uppercase">{item.name}</h4>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${item.menu_type === 'party' ? 'bg-red-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}>
+                          {item.menu_type}
+                        </span>
+                      </div>
                       <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{item.category}</span>
                     </div>
                   </div>
@@ -274,49 +390,109 @@ export default function AdminPage({ searchParams }) {
           <div className="space-y-12">
             <div className="flex justify-between items-end">
                <div>
-                  <h2 className="text-4xl font-black text-zinc-900 tracking-tighter">Community <span className="text-red-600 italic">Submissions</span></h2>
-                  <p className="text-zinc-500 font-medium tracking-tight mt-2 italic">Review photos and captions shared by your guests.</p>
+                  <h2 className="text-4xl font-black text-zinc-900 tracking-tighter">Community <span className="text-red-600 italic">Gallery</span></h2>
+                  <p className="text-zinc-500 font-medium tracking-tight mt-2 italic">Manage what the world sees of Banalata.</p>
                </div>
-               <div className="bg-red-50 text-red-600 font-black px-6 py-2 rounded-full text-xs uppercase tracking-widest border-2 border-red-100">
-                  {pendingImages.length} PENDING APPROVAL
+               
+               {/* Gallery Sub-Tabs */}
+               <div className="flex bg-zinc-100 p-1 rounded-2xl">
+                 <button 
+                   onClick={() => setGalleryTab('pending')}
+                   className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${galleryTab === 'pending' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
+                 >Pending ({pendingImages.length})</button>
+                 <button 
+                   onClick={() => setGalleryTab('live')}
+                   className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${galleryTab === 'live' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
+                 >Live Gallery ({approvedImages.length})</button>
+                 <button 
+                   onClick={() => setGalleryTab('upload')}
+                   className={`px-6 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${galleryTab === 'upload' ? 'bg-red-600 text-white shadow-sm' : 'text-zinc-400'}`}
+                 >+ Admin Upload</button>
                </div>
             </div>
 
-            {pendingImages.length === 0 ? (
-               <div className="bg-white p-20 rounded-[3rem] border-2 border-dashed border-zinc-100 text-center">
-                  <div className="text-6xl mb-6">🏜️</div>
-                  <h3 className="text-xl font-black text-zinc-300 uppercase tracking-widest">The queue is empty.</h3>
-                  <p className="text-zinc-400 font-medium">Sit back and relax while your guests take some photos!</p>
-               </div>
-            ) : (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                  {pendingImages.map(img => (
-                    <div key={img.id} className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-zinc-100 flex flex-col group">
-                        <div className="relative h-64 overflow-hidden">
-                           <img src={img.image_url} alt="Pending" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                        </div>
-                        <div className="p-8 flex-grow">
-                           <p className="text-zinc-800 font-serif italic text-lg leading-tight mb-4">"{img.description}"</p>
-                           <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Submitted on {new Date(img.created_at).toLocaleDateString()}</p>
-                           
-                           <div className="flex gap-4">
-                              <button 
-                                onClick={() => handleGalleryAction(img.id, 'approve')}
-                                className="flex-1 bg-green-500 hover:bg-green-600 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                              >
-                                Approve ✅
-                              </button>
-                              <button 
-                                onClick={() => handleGalleryAction(img.id, 'delete')}
-                                className="flex-1 bg-zinc-100 hover:bg-red-50 hover:text-red-600 text-zinc-400 font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                              >
-                                Reject 🗑️
-                              </button>
-                           </div>
-                        </div>
+            {galleryTab === 'pending' ? (
+              pendingImages.length === 0 ? (
+                <div className="bg-white p-20 rounded-[3rem] border-2 border-dashed border-zinc-100 text-center">
+                    <div className="text-6xl mb-6">🏜️</div>
+                    <h3 className="text-xl font-black text-zinc-300 uppercase tracking-widest">The queue is empty.</h3>
+                    <p className="text-zinc-400 font-medium">Sit back and relax while your guests take some photos!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    {pendingImages.map(img => (
+                      <div key={img.id} className="bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-zinc-100 flex flex-col group">
+                          <div className="relative h-64 overflow-hidden">
+                            <img src={img.image_url} alt="Pending" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                          </div>
+                          <div className="p-8 flex-grow">
+                            <p className="text-zinc-800 font-serif italic text-lg leading-tight mb-4">"{img.description}"</p>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Submitted on {new Date(img.created_at).toLocaleDateString()}</p>
+                            
+                            <div className="flex gap-4">
+                                <button 
+                                  onClick={() => handleGalleryAction(img.id, 'approve')}
+                                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                                >
+                                  Approve ✅
+                                </button>
+                                <button 
+                                  onClick={() => handleGalleryAction(img.id, 'delete')}
+                                  className="flex-1 bg-zinc-100 hover:bg-red-50 hover:text-red-600 text-zinc-400 font-black py-4 rounded-xl text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                                >
+                                  Reject 🗑️
+                                </button>
+                            </div>
+                          </div>
+                      </div>
+                    ))}
+                </div>
+              )
+            ) : galleryTab === 'live' ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                 {approvedImages.map(img => (
+                    <div key={img.id} className="relative group rounded-3xl overflow-hidden aspect-square shadow-lg border-2 border-white">
+                       <img src={img.image_url} className="w-full h-full object-cover" />
+                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                          <p className="text-white text-[10px] font-bold mb-4 line-clamp-3">"{img.description}"</p>
+                          <button 
+                            onClick={() => handleGalleryAction(img.id, 'delete')}
+                            className="bg-red-600 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest hover:scale-110 transition-all"
+                          >
+                            Delete Forever 🗑️
+                          </button>
+                       </div>
                     </div>
-                  ))}
-               </div>
+                 ))}
+              </div>
+            ) : (
+              <div className="max-w-xl mx-auto bg-white p-12 rounded-[3rem] shadow-2xl border-t-8 border-red-600">
+                 <h3 className="text-2xl font-black text-zinc-900 mb-8 uppercase tracking-tighter">Admin <span className="text-red-600 italic">Direct Upload</span></h3>
+                 <form onSubmit={handleAdminGalleryUpload} className="space-y-6">
+                    <div className="aspect-video bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-3xl flex items-center justify-center relative overflow-hidden group">
+                       {galleryImage ? (
+                         <img src={URL.createObjectURL(galleryImage)} className="w-full h-full object-cover" />
+                       ) : (
+                         <span className="text-zinc-300 font-black uppercase tracking-widest text-xs">Drop Photo Here</span>
+                       )}
+                       <input 
+                         type="file" accept="image/*" required
+                         onChange={e => setGalleryImage(e.target.files[0])}
+                         className="absolute inset-0 opacity-0 cursor-pointer"
+                       />
+                    </div>
+                    <textarea 
+                      placeholder="Enter a caption for this moment..."
+                      required
+                      className="w-full p-6 bg-zinc-50 border-2 border-zinc-100 rounded-3xl outline-none focus:border-red-600 font-bold italic"
+                      value={galleryUploadForm.description}
+                      onChange={e => setGalleryUploadForm({ ...galleryUploadForm, description: e.target.value })}
+                    />
+                    <button type="submit" className="w-full bg-red-600 text-white font-black py-6 rounded-2xl shadow-xl uppercase tracking-widest text-sm hover:bg-red-700 transition-all">
+                       Post to Live Gallery 🚀
+                    </button>
+                 </form>
+              </div>
             )}
           </div>
         ) : (

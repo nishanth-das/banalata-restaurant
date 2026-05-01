@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import { supabase } from "@/lib/supabaseClient";
 import { claimRandomCouponFromPool, fetchUserCoupons } from "@/lib/coupon";
+import ScratchCard from "@/components/ScratchCard";
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -12,7 +14,7 @@ export default function Home() {
   const [rewardCode, setRewardCode] = useState(null);
   const [message, setMessage] = useState("");
 
-  const GOOGLE_REVIEW_URL = "https://g.page/r/YOUR_REVIEW_LINK_HERE/review";
+  const GOOGLE_REVIEW_URL = "https://g.page/r/CTaudV8wMFV0EAE/review"; // Placeholder, will guide user to update if needed
 
   useEffect(() => {
     const checkUser = async () => {
@@ -94,7 +96,7 @@ export default function Home() {
       {/* 🌟 PREMIUM HERO SECTION 🌟 */}
       <section className="relative min-h-[95vh] flex items-center justify-center text-center overflow-hidden">
         {/* Optimized Next.js Image Background */}
-        <Image
+        <NextImage
           src="/images/hero.png"
           alt="Banalata Bengali Dhaba"
           fill
@@ -102,7 +104,7 @@ export default function Home() {
           className="object-cover z-0 scale-110 animate-subtle-zoom"
           sizes="100vw"
         />
-        
+
         {/* Dark Overlay to make text pop */}
         <div className="absolute inset-0 bg-black/40 z-10"></div>
         {/* Graded Radial Overlay for Text Readability */}
@@ -275,11 +277,15 @@ export default function Home() {
                 )}
 
                 {rewardCode ? (
-                  <div className="text-center animate-in zoom-in-50 duration-700">
+                  <div className="text-center animate-in zoom-in-50 duration-700 w-full flex flex-col items-center">
                     <p className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.5em] mb-4">Your Gift Code</p>
-                    <div className="text-6xl font-black text-white tracking-widest bg-black/40 px-10 py-6 rounded-[2rem] border-2 border-dashed border-yellow-400 italic shadow-2xl">
-                      {rewardCode}
-                    </div>
+                    
+                    <ScratchCard width={320} height={120}>
+                       <span className="text-3xl font-black text-white tracking-widest italic drop-shadow-lg px-4">
+                         {rewardCode}
+                       </span>
+                    </ScratchCard>
+
                     <p className="text-[10px] text-zinc-500 mt-8 font-black font-serif uppercase">*Screenshotted? Great! See you at the counter.</p>
                   </div>
                 ) : (
@@ -289,7 +295,7 @@ export default function Home() {
                       target="_blank"
                       className="block w-full text-center py-4 rounded-2xl bg-zinc-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest transition-all mb-4"
                     >
-                      Open Google Maps
+                      Give Google Review ⭐️
                     </a>
                     <div className="flex flex-col gap-4">
                       <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Upload Proof</label>
@@ -303,7 +309,7 @@ export default function Home() {
                     <button
                       onClick={handleClaim}
                       disabled={uploading}
-                      className="w-full bg-yellow-400 hover:bg-white text-black font-black py-6 rounded-3xl shadow-2xl transition-all disabled:opacity-50 active:scale-95 text-lg uppercase tracking-widest mt-4"
+                      className="w-full bg-yellow-400 hover:bg-white text-black font-black py-6 rounded-3xl shadow-2xl transition-all disabled:opacity-50 active:scale-95 text-xs md:text-sm uppercase tracking-widest mt-4 px-4"
                     >
                       {uploading ? "Verifying..." : "Claim My Food Coupon →"}
                     </button>

@@ -12,6 +12,7 @@ export default function GalleryClient({ initialData }) {
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ files: [], description: "" });
   const [message, setMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null); // Theater Mode
 
   useEffect(() => {
     const checkUser = async () => {
@@ -94,7 +95,11 @@ export default function GalleryClient({ initialData }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {images.map((img) => (
-            <div key={img.id} className="group relative break-inside-avoid overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-xl border border-white hover:shadow-2xl transition-all duration-500">
+            <div 
+              key={img.id} 
+              onClick={() => setSelectedImage(img)}
+              className="group relative break-inside-avoid overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-xl border border-white hover:shadow-2xl transition-all duration-500 cursor-pointer"
+            >
                <img 
                   src={img.image_url} 
                   alt={`Banalata Dhaba: ${img.description}`} 
@@ -161,6 +166,34 @@ export default function GalleryClient({ initialData }) {
                  <p className="text-[10px] text-center text-zinc-400 font-medium px-4">
                     *Your photo will be optimized to WebP and reviewed by our team before going live.
                  </p>
+              </div>
+           </div>
+        </div>
+      )}
+      {/* 🎭 THEATER MODE LIGHTBOX 🎭 */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-500">
+           {/* Dark Blur Backdrop */}
+           <div 
+             className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
+             onClick={() => setSelectedImage(null)}
+           ></div>
+
+           <div className="relative z-10 w-full max-w-5xl max-h-full flex flex-col items-center animate-in zoom-in-95 duration-500">
+              {/* Close Button */}
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="absolute -top-12 right-0 md:-right-12 text-white/50 hover:text-white transition-all text-4xl font-light"
+              >✕</button>
+
+              <div className="w-full h-full rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/10 flex items-center justify-center bg-zinc-900/50">
+                 <img src={selectedImage.image_url} alt="Large View" className="max-w-full max-h-[80vh] object-contain" />
+              </div>
+
+              <div className="mt-8 text-center px-4">
+                 <p className="text-white font-serif italic text-2xl md:text-3xl mb-3">"{selectedImage.description}"</p>
+                 <div className="w-12 h-1 bg-yellow-400 mx-auto rounded-full mb-3"></div>
+                 <p className="text-white/40 text-[10px] uppercase font-black tracking-[0.3em]">Captured at Banalata Bengali Desi Dhaba</p>
               </div>
            </div>
         </div>
