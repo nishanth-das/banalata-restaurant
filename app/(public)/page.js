@@ -112,7 +112,7 @@ export default function Home() {
 
         <div className="container mx-auto px-4 relative z-20">
 
-          <h1 className="text-5xl sm:text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.85] drop-shadow-2xl">
+          <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.85] drop-shadow-2xl">
             Savor the <span className="text-red-500 italic font-serif">Soul</span> <br />
             of <span className="underline decoration-yellow-400 decoration-8 underline-offset-8">Bengali</span>
           </h1>
@@ -121,17 +121,17 @@ export default function Home() {
             Where tradition meets passion. Hand-ground spices, heritage recipes, and a warm Dhaba welcome in the heart of the city.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-6 items-center">
+          <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
             <Link
               href="/menu"
-              className="group bg-yellow-400 hover:bg-white text-black font-black py-6 px-14 rounded-3xl shadow-[0_10px_40px_rgba(251,191,36,0.3)] transition-all active:scale-95 text-lg flex items-center gap-3"
+              className="group bg-yellow-400 hover:bg-white text-black font-black py-6 px-14 rounded-3xl shadow-[0_10px_40px_rgba(251,191,36,0.3)] transition-all active:scale-95 text-lg flex items-center gap-3 w-full sm:w-auto text-center justify-center"
             >
               EXPLORE OUR MENU
               <span className="group-hover:translate-x-2 transition-transform italic">→</span>
             </Link>
             <Link
               href="/game"
-              className="bg-red-600 hover:bg-white text-white hover:text-red-600 font-black py-6 px-12 rounded-3xl transition-all active:scale-95 text-lg shadow-xl"
+              className="bg-red-600 hover:bg-white text-white hover:text-red-600 font-black py-6 px-12 rounded-3xl transition-all active:scale-95 text-lg shadow-xl w-full sm:w-auto text-center justify-center"
             >
               🏆 PLAY & WIN REWARDS
             </Link>
@@ -279,11 +279,11 @@ export default function Home() {
                 {rewardCode ? (
                   <div className="text-center animate-in zoom-in-50 duration-700 w-full flex flex-col items-center">
                     <p className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.5em] mb-4">Your Gift Code</p>
-                    
-                    <ScratchCard width={320} height={120}>
-                       <span className="text-3xl font-black text-white tracking-widest italic drop-shadow-lg px-4">
-                         {rewardCode}
-                       </span>
+
+                    <ScratchCard width={300} height={120}>
+                      <span className="text-3xl font-black text-white tracking-widest italic drop-shadow-lg px-4 break-all">
+                        {rewardCode}
+                      </span>
                     </ScratchCard>
 
                     <p className="text-[10px] text-zinc-500 mt-8 font-black font-serif uppercase">*Screenshotted? Great! See you at the counter.</p>
@@ -359,6 +359,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* 🥬 BRAND PROMISES 🥬 */}
       <section className="py-24 px-4 bg-yellow-50/50">

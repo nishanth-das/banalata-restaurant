@@ -34,7 +34,10 @@ export default function AdminPage({ searchParams }) {
   
   // Coupon State
   const [coupons, setCoupons] = useState([]);
-  const [couponForm, setCouponForm] = useState({ code: "", source: "manual" });
+  const [couponForm, setCouponForm] = useState({ code: "", source: "manual", expires_at: "" });
+
+  // Customers State
+  const [profiles, setProfiles] = useState([]);
 
   // Gallery State
   const [pendingImages, setPendingImages] = useState([]);
@@ -61,6 +64,12 @@ export default function AdminPage({ searchParams }) {
     fetchMenu();
     fetchCoupons();
     fetchGallery();
+    fetchProfiles();
+  };
+
+  const fetchProfiles = async () => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    setProfiles(data || []);
   };
 
   const fetchMenu = async () => {
@@ -198,12 +207,23 @@ export default function AdminPage({ searchParams }) {
       // If creating for a pool (game/review), userId is null
       const targetUserId = (couponForm.source === 'game' || couponForm.source === 'review') ? null : user.id;
       
-      await saveCoupon(targetUserId, couponForm.code || generateCouponCode(), couponForm.source);
-      setCouponForm({ code: "", source: "manual" });
+      const expiresAt = couponForm.expires_at ? new Date(couponForm.expires_at).toISOString() : null;
+
+      await saveCoupon(targetUserId, couponForm.code || generateCouponCode(), couponForm.source, null, expiresAt);
+      setCouponForm({ code: "", source: "manual", expires_at: "" });
       fetchCoupons();
       alert("Coupon Added Successfully!");
     } catch (err) {
       alert("Error adding coupon: " + err.message);
+    }
+  };
+
+  const markCouponRedeemed = async (id) => {
+    const { error } = await supabase.from('coupons').update({ is_redeemed: true }).eq('id', id);
+    if (error) {
+       alert("Error marking redeemed: " + error.message);
+    } else {
+       fetchCoupons();
     }
   };
 
@@ -519,6 +539,15 @@ export default function AdminPage({ searchParams }) {
                     className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-yellow-500 outline-none font-bold"
                     value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value })}
                   />
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Valid Until (Optional)</label>
+                    <input
+                      type="date"
+                      className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-yellow-500 outline-none font-bold text-zinc-500"
+                      value={couponForm.expires_at} onChange={e => setCouponForm({ ...couponForm, expires_at: e.target.value })}
+                    />
+                  </div>
                   
                   <button type="submit" className="w-full bg-yellow-400 text-black font-black py-4 rounded-2xl shadow-lg hover:bg-yellow-500 transition-all uppercase tracking-widest text-sm">
                     {couponForm.source === 'manual' ? "Create Now" : "Add to Pool"}
@@ -598,9 +627,15 @@ export default function AdminPage({ searchParams }) {
                          {cp.screenshot_url && (
                            <a href={cp.screenshot_url} target="_blank" className="text-[10px] font-black text-blue-400 underline uppercase tracking-widest">View Proof</a>
                          )}
+                         {cp.expires_at && (
+                           <span className="text-[9px] font-bold text-red-400 uppercase">Exp: {new Date(cp.expires_at).toLocaleDateString()}</span>
+                         )}
                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${cp.is_redeemed ? 'bg-zinc-800 text-zinc-500' : 'bg-green-500/10 text-green-400'}`}>
                            {cp.is_redeemed ? 'Redeemed' : 'Active'}
                          </span>
+                         {!cp.is_redeemed && (
+                            <button onClick={() => markCouponRedeemed(cp.id)} className="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-yellow-400 text-black hover:bg-yellow-500">Mark Used</button>
+                         )}
                        </div>
                     </div>
                   ))}
@@ -609,6 +644,54 @@ export default function AdminPage({ searchParams }) {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'customers' && (
+           <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border-b-8 border-yellow-400">
+             <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+                <div>
+                  <h2 className="text-3xl font-black text-zinc-900 tracking-tighter">Customer CRM</h2>
+                  <p className="text-zinc-500 font-medium text-sm mt-1">Manage profiles and marketing data</p>
+                </div>
+                <div className="bg-yellow-50 text-yellow-600 font-black text-xl px-6 py-3 rounded-2xl border-2 border-yellow-100 flex items-center gap-3 shadow-inner">
+                  <span>👥</span> {profiles.length} <span className="text-sm">Total</span>
+                </div>
+             </div>
+
+             <div className="space-y-6">
+                {profiles.map(profile => {
+                   const userCoupons = coupons.filter(c => c.user_id === profile.id);
+                   return (
+                     <div key={profile.id} className="bg-zinc-50 rounded-3xl p-6 border border-zinc-100 hover:border-yellow-200 transition-all">
+                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                         <div>
+                            <h4 className="text-xl font-black text-zinc-800 tracking-tight">{profile.full_name || "Unknown"}</h4>
+                            <p className="text-sm font-bold text-zinc-500">{profile.phone_number || "No Phone"}</p>
+                         </div>
+                         <div className="flex gap-2">
+                            <span className="bg-white border border-zinc-200 text-xs font-black uppercase px-4 py-2 rounded-xl text-zinc-600">
+                              🎟️ {userCoupons.length} Coupons
+                            </span>
+                         </div>
+                       </div>
+
+                       {userCoupons.length > 0 && (
+                          <div className="bg-white rounded-2xl p-4 border border-zinc-100 flex flex-wrap gap-3">
+                             {userCoupons.map(cp => (
+                               <div key={cp.id} className="flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-xl border border-zinc-100">
+                                  <span className={`text-sm font-black ${cp.is_redeemed ? 'text-zinc-400 line-through' : 'text-yellow-600'}`}>{cp.coupon_code}</span>
+                                  {!cp.is_redeemed && (
+                                     <button onClick={() => markCouponRedeemed(cp.id)} className="text-[10px] font-black uppercase text-white bg-black hover:bg-zinc-800 px-3 py-1 rounded-lg">Use</button>
+                                  )}
+                               </div>
+                             ))}
+                          </div>
+                       )}
+                     </div>
+                   );
+                })}
+             </div>
+           </div>
         )}
       </div>
   );

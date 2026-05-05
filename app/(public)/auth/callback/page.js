@@ -17,15 +17,31 @@ export default function AuthCallback() {
         return;
       }
       
+      const checkProfileAndRedirect = async (session) => {
+        // Wait a tiny bit for the database trigger to create the profile row if it's a new signup
+        await new Promise(res => setTimeout(res, 500));
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_number')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profile?.phone_number) {
+          window.location.href = "/onboarding";
+        } else {
+          window.location.href = "/";
+        }
+      };
+
       if (data?.session) {
-        // Use window.location.href to force a full refresh so Navbar reloads
-        window.location.href = "/";
+        await checkProfileAndRedirect(data.session);
       } else {
         // Small delay to allow Supabase internals to catch up
         setTimeout(async () => {
           const { data: retryData } = await supabase.auth.getSession();
           if (retryData?.session) {
-            window.location.href = "/";
+            await checkProfileAndRedirect(retryData.session);
           } else {
             window.location.href = "/";
           }

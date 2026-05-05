@@ -9,6 +9,7 @@ import { ADMIN_EMAILS } from "@/lib/admins";
 export default function AdminLayout({ children }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -32,10 +33,10 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-100">
-      <AdminSidebar />
+      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <div className="flex-1 flex flex-col relative overflow-y-auto">
-        <AdminHeader />
-        <main className="p-12 pb-24">
+        <AdminHeader setIsSidebarOpen={setIsSidebarOpen} />
+        <main className="p-4 lg:p-12 pb-24">
           {children}
         </main>
       </div>

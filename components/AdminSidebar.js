@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -18,13 +18,23 @@ export default function AdminSidebar() {
     { name: "Dashboard", href: "/admin", icon: "📊" },
     { name: "Menu Management", href: "/admin?tab=menu", icon: "🥘" },
     { name: "Coupon Tracker", href: "/admin?tab=coupons", icon: "🎟️" },
+    { name: "Customer CRM", href: "/admin?tab=customers", icon: "👥" },
     { name: "Gallery Moderation", href: "/admin?tab=gallery", icon: "📸" },
     { name: "Settings", href: "#", icon: "⚙️", disabled: true },
   ];
 
   return (
-    <aside className="w-72 bg-red-600 min-h-screen text-white flex flex-col shadow-2xl relative z-20">
-      {/* Brand Logo Area */}
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={() => setIsOpen(false)}
+        ></div>
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-red-600 min-h-screen text-white flex flex-col shadow-2xl z-50 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {/* Brand Logo Area */}
       <div className="p-8 border-b border-red-500 bg-red-700/30">
         <Link href="/" className="flex flex-col items-center gap-3 group">
           <img src="/logo.png" alt="Logo" className="h-16 w-auto drop-shadow-lg group-hover:scale-105 transition-transform" />
@@ -36,11 +46,12 @@ export default function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-grow py-8 px-4 space-y-2">
+      <nav className="flex-grow py-8 px-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => (
           <Link
             key={item.name}
             href={item.href}
+            onClick={() => setIsOpen && setIsOpen(false)}
             className={`flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-sm transition-all group ${
               pathname === item.href || (item.name === "Dashboard" && pathname === "/admin")
                 ? "bg-yellow-400 text-red-600 shadow-xl scale-105"
@@ -69,5 +80,6 @@ export default function AdminSidebar() {
       {/* Decorative Accent */}
       <div className="absolute top-0 right-0 w-1 h-full bg-yellow-400/30"></div>
     </aside>
+    </>
   );
 }
