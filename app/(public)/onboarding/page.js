@@ -60,7 +60,13 @@ export default function OnboardingPage() {
 
       if (error) throw error;
       
-      window.location.href = "/";
+      const returnTo = localStorage.getItem('returnTo');
+      if (returnTo) {
+        localStorage.removeItem('returnTo');
+        window.location.href = returnTo;
+      } else {
+        window.location.href = "/";
+      }
     } catch (err) {
       setMessage("Error saving profile: " + err.message);
       setSaving(false);

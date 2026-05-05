@@ -27,10 +27,18 @@ export default function AuthCallback() {
           .eq('id', session.user.id)
           .single();
 
+        const returnTo = localStorage.getItem('returnTo');
+
         if (!profile?.phone_number) {
           window.location.href = "/onboarding";
         } else {
-          window.location.href = "/";
+          // If we have a return path saved, go there and clear it, else go home
+          if (returnTo) {
+            localStorage.removeItem('returnTo');
+            window.location.href = returnTo;
+          } else {
+            window.location.href = "/";
+          }
         }
       };
 
