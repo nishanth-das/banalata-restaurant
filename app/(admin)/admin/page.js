@@ -227,6 +227,34 @@ export default function AdminPage() {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ["Name", "Phone Number", "Email", "Total Coupons Claimed"];
+    const csvContent = [
+      headers.join(","),
+      ...profiles.map(p => {
+        const userCouponsCount = coupons.filter(c => c.user_id === p.id).length;
+        // Escape quotes and wrap in quotes for robust CSV
+        const escapeCSV = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
+        return [
+          escapeCSV(p.full_name),
+          escapeCSV(p.phone_number),
+          escapeCSV(p.email || 'N/A'),
+          userCouponsCount
+        ].join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Banalata_Customers_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) return <div className="p-20 text-center font-black text-red-600 animate-pulse">LOADING DASHBOARD...</div>;
 
   if (!user || !ADMIN_EMAILS.includes(user.email)) {
@@ -614,31 +642,39 @@ export default function AdminPage() {
                 </div>
                 
                 <div className="space-y-4 relative z-10">
-                  {coupons.filter(c => c.user_id).slice(0, 10).map(cp => (
-                    <div key={cp.id} className="bg-white/5 p-5 rounded-2xl border border-white/5 flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                         <div className="text-lg font-black text-yellow-400 tracking-wider">
-                           {cp.coupon_code}
+                  {coupons.filter(c => c.user_id).slice(0, 10).map(cp => {
+                    const prof = profiles.find(p => p.id === cp.user_id);
+                    return (
+                    <div key={cp.id} className="bg-white/5 p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                       <div>
+                         <div className="flex items-center gap-3 mb-1">
+                           <div className="text-lg font-black text-yellow-400 tracking-wider">
+                             {cp.coupon_code}
+                           </div>
+                           <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white uppercase tracking-widest">{cp.source}</span>
                          </div>
-                         <div className="w-1 h-1 rounded-full bg-zinc-700"></div>
-                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{cp.source}</span>
+                         <div className="text-sm font-bold text-zinc-300">
+                           {prof ? `${prof.full_name} • ${prof.phone_number}` : 'Unknown Customer'}
+                         </div>
                        </div>
-                       <div className="flex items-center gap-3">
+                       <div className="flex flex-wrap items-center gap-3">
                          {cp.screenshot_url && (
-                           <a href={cp.screenshot_url} target="_blank" className="text-[10px] font-black text-blue-400 underline uppercase tracking-widest">View Proof</a>
+                           <a href={cp.screenshot_url} target="_blank" className="text-[10px] font-black bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/30 hover:bg-blue-500/40 transition-all uppercase tracking-widest flex items-center gap-1">
+                             <span>🖼️</span> View Proof
+                           </a>
                          )}
                          {cp.expires_at && (
-                           <span className="text-[9px] font-bold text-red-400 uppercase">Exp: {new Date(cp.expires_at).toLocaleDateString()}</span>
+                           <span className="text-[10px] font-bold text-red-400 uppercase bg-red-500/10 px-2 py-1 rounded">Exp: {new Date(cp.expires_at).toLocaleDateString()}</span>
                          )}
-                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${cp.is_redeemed ? 'bg-zinc-800 text-zinc-500' : 'bg-green-500/10 text-green-400'}`}>
+                         <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase ${cp.is_redeemed ? 'bg-zinc-800 text-zinc-500' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
                            {cp.is_redeemed ? 'Redeemed' : 'Active'}
                          </span>
                          {!cp.is_redeemed && (
-                            <button onClick={() => markCouponRedeemed(cp.id)} className="px-3 py-1 rounded-full text-[9px] font-black uppercase bg-yellow-400 text-black hover:bg-yellow-500">Mark Used</button>
+                            <button onClick={() => markCouponRedeemed(cp.id)} className="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase bg-yellow-400 text-black hover:bg-yellow-500 hover:scale-105 transition-all shadow-lg shadow-yellow-400/20">Mark Used</button>
                          )}
                        </div>
                     </div>
-                  ))}
+                  )})}
                   {coupons.filter(c => c.user_id).length === 0 && <div className="text-center py-10 text-zinc-600 font-bold uppercase tracking-widest text-xs">No customer claims yet</div>}
                 </div>
               </div>
@@ -653,8 +689,16 @@ export default function AdminPage() {
                   <h2 className="text-3xl font-black text-zinc-900 tracking-tighter">Customer CRM</h2>
                   <p className="text-zinc-500 font-medium text-sm mt-1">Manage profiles and marketing data</p>
                 </div>
-                <div className="bg-yellow-50 text-yellow-600 font-black text-xl px-6 py-3 rounded-2xl border-2 border-yellow-100 flex items-center gap-3 shadow-inner">
-                  <span>👥</span> {profiles.length} <span className="text-sm">Total</span>
+                 <div className="flex items-center gap-4">
+                  <div className="bg-yellow-50 text-yellow-600 font-black text-xl px-6 py-3 rounded-2xl border-2 border-yellow-100 flex items-center gap-3 shadow-inner">
+                    <span>👥</span> {profiles.length} <span className="text-sm">Total</span>
+                  </div>
+                  <button 
+                    onClick={exportToCSV}
+                    className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase tracking-widest px-6 py-4 rounded-2xl shadow-xl hover:-translate-y-1 transition-all flex items-center gap-2"
+                  >
+                    <span>📊</span> Export Excel
+                  </button>
                 </div>
              </div>
 
@@ -681,7 +725,12 @@ export default function AdminPage() {
                                <div key={cp.id} className="flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-xl border border-zinc-100">
                                   <span className={`text-sm font-black ${cp.is_redeemed ? 'text-zinc-400 line-through' : 'text-yellow-600'}`}>{cp.coupon_code}</span>
                                   {!cp.is_redeemed && (
-                                     <button onClick={() => markCouponRedeemed(cp.id)} className="text-[10px] font-black uppercase text-white bg-black hover:bg-zinc-800 px-3 py-1 rounded-lg">Use</button>
+                                     <button 
+                                       onClick={() => markCouponRedeemed(cp.id)} 
+                                       className="text-[10px] font-black uppercase text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl shadow-md hover:-translate-y-0.5 transition-all ml-auto"
+                                     >
+                                       Redeem Now
+                                     </button>
                                   )}
                                </div>
                              ))}
