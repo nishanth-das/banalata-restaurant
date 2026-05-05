@@ -236,9 +236,9 @@ export default function Home() {
                 </div>
               </div>
 
-              <Link href="/contact" className="group bg-zinc-900 text-white font-black px-12 py-5 rounded-2xl shadow-xl hover:bg-black transition-all inline-flex items-center gap-4 text-sm tracking-widest active:scale-95">
+              <a href="https://share.google/1wX6xN0UIZJlMCnPn" target="_blank" rel="noopener noreferrer" className="group bg-zinc-900 text-white font-black px-12 py-5 rounded-2xl shadow-xl hover:bg-black transition-all inline-flex items-center gap-4 text-sm tracking-widest active:scale-95">
                 FIND US ON MAP 🚩
-              </Link>
+              </a>
             </div>
           </div>
         </div>
