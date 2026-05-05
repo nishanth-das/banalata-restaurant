@@ -4,18 +4,18 @@ import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { generateCouponCode, saveCoupon } from "@/lib/coupon";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ADMIN_EMAILS } from "@/lib/admins";
 import { fetchPendingImages, moderateImage } from "@/lib/gallery";
 import { processMenuImage } from "@/lib/imageProcessor";
 
-export default function AdminPage({ searchParams }) {
-  // Next.js 15 requires unwrapping searchParams!
-  const resolvedParams = use(searchParams);
+export default function AdminPage() {
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // Use searchParams or default to menu
-  const activeTab = resolvedParams?.tab || "menu";
+  const activeTab = searchParams.get('tab') || "menu";
   
   // Menu State
   const [menuItems, setMenuItems] = useState([]);
@@ -515,7 +515,7 @@ export default function AdminPage({ searchParams }) {
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === 'coupons' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Manual Coupon Form */}
             <div className="lg:col-span-1">
@@ -644,7 +644,7 @@ export default function AdminPage({ searchParams }) {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         {activeTab === 'customers' && (
            <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border-b-8 border-yellow-400">

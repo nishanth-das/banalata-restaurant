@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
 
 export default function AdminSidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  
+  const currentTab = searchParams.get('tab');
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -53,7 +55,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
             href={item.href}
             onClick={() => setIsOpen && setIsOpen(false)}
             className={`flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-sm transition-all group ${
-              pathname === item.href || (item.name === "Dashboard" && pathname === "/admin")
+              (item.name === "Dashboard" && !currentTab && pathname === "/admin") || (currentTab && item.href.includes(`tab=${currentTab}`))
                 ? "bg-yellow-400 text-red-600 shadow-xl scale-105"
                 : item.disabled 
                   ? "opacity-40 cursor-not-allowed" 
