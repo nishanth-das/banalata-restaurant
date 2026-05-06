@@ -26,5 +26,5 @@ CREATE POLICY "Admins can delete review screenshots"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'review-screenshots' AND
-  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com')
+  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com', 'sutradharsanjeeb@gmail.com', 'digitalunnayan@gmail.com')
 );

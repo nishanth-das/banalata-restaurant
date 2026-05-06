@@ -21,7 +21,7 @@ CREATE POLICY "Admins can upload menu images"
 ON storage.objects FOR INSERT 
 WITH CHECK (
   bucket_id = 'menu-images' AND 
-  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com')
+  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com', 'sutradharsanjeeb@gmail.com', 'digitalunnayan@gmail.com')
 );
 
 -- Allow Admins to delete menu images
@@ -29,5 +29,5 @@ CREATE POLICY "Admins can delete menu images"
 ON storage.objects FOR DELETE 
 USING (
   bucket_id = 'menu-images' AND 
-  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com')
+  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com', 'sutradharsanjeeb@gmail.com', 'digitalunnayan@gmail.com')
 );

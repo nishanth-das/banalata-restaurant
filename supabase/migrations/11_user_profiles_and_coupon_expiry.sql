@@ -27,7 +27,7 @@ WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Admins can view all profiles"
 ON profiles FOR SELECT
-USING (auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com'));
+USING (auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com', 'sutradharsanjeeb@gmail.com', 'digitalunnayan@gmail.com'));
 
 -- 2. Trigger to automatically create a profile row when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()

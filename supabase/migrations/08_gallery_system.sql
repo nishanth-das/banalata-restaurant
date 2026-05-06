@@ -25,7 +25,7 @@ ON gallery FOR INSERT WITH CHECK (auth.uid() = user_id);
 -- Note: Replace with nishanthdas.personal@gmail.com or use the whitelist check
 CREATE POLICY "Admins have full access to gallery" 
 ON gallery FOR ALL USING (
-  auth.email() IN ('nishanthdas.personal@gmail.com')
+  auth.email() IN ('nishanthdas.personal@gmail.com', 'admin@banalata69.com', 'sutradharsanjeeb@gmail.com', 'digitalunnayan@gmail.com')
 );
 
 -- 4. Create the Storage Bucket for Gallery Images
