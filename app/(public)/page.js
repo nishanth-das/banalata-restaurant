@@ -234,13 +234,17 @@ export default function Home() {
             {/* Second Row */}
             <div className="flex flex-row justify-center gap-4 w-full">
               <a
-                href="#"
+                href="https://www.swiggy.com/menu/1361734?source=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group bg-gradient-to-r from-[#fc8019] to-[#fd9945] hover:from-white hover:to-white text-white hover:text-[#fc8019] font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(252,128,25,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center w-1/2 tracking-widest border border-white/10 hover:border-[#fc8019]/30"
               >
                 SWIGGY
               </a>
               <a
-                href="#"
+                href="https://zomato.onelink.me/xqzv/nmu2fy95"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group bg-gradient-to-r from-[#cb202d] to-[#e23744] hover:from-white hover:to-white text-white hover:text-[#cb202d] font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(203,32,45,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center w-1/2 tracking-widest border border-white/10 hover:border-[#cb202d]/30"
               >
                 ZOMATO
