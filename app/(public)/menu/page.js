@@ -10,23 +10,45 @@ export default function Menu() {
   const [selectedItem, setSelectedItem] = useState(null); // For the "Know More" popup
   const [activeCategory, setActiveCategory] = useState(''); // Used for scroll spy
   
+  // Party Inquiry State
+  const [inquiryForm, setInquiryForm] = useState({
+    name: '', phone: '', guests: '', event_date: '', event_type: 'Birthday', notes: ''
+  });
+  const [inquiryStatus, setInquiryStatus] = useState('idle'); // 'idle', 'submitting', 'success', 'error'
+
+  
   useEffect(() => {
     fetchMenu();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('type') === 'party') {
+        setActiveMenuType('party');
+      }
+    }
   }, []);
 
   const fetchMenu = async () => {
     const { data, error } = await supabase
       .from('menu')
       .select('*')
-      .order('category', { ascending: true })
-      .order('name', { ascending: true });
+      .eq('menu_type', 'regular'); // Only fetch regular menu items now
 
-    if (error) {
-      console.error("Error fetching menu:", error.message);
-    } else {
-      setMenuItems(data || []);
-    }
+    if (error) console.error(error);
+    else setMenuItems(data || []);
     setLoading(false);
+  };
+
+  const handleInquirySubmit = async (e) => {
+    e.preventDefault();
+    setInquiryStatus('submitting');
+    const { error } = await supabase.from('party_inquiries').insert([inquiryForm]);
+    if (error) {
+      console.error(error);
+      setInquiryStatus('error');
+    } else {
+      setInquiryStatus('success');
+      setInquiryForm({ name: '', phone: '', guests: '', event_date: '', event_type: 'Birthday', notes: '' });
+    }
   };
 
   // 1. Filter items based on Regular vs Party
@@ -103,14 +125,77 @@ export default function Menu() {
                 <button 
                   onClick={() => { setActiveMenuType('party'); setActiveCategory(''); }}
                   className={`flex-1 md:w-32 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-all ${activeMenuType === 'party' ? 'bg-yellow-400 text-black shadow-lg' : 'text-white/60 hover:text-white'}`}
-                >Party Package</button>
+                >Party Inquiries</button>
               </div>
            </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-[1400px]">
-        {categories.length === 0 ? (
+        {activeMenuType === 'party' ? (
+          <div className="max-w-3xl mx-auto bg-white text-zinc-900 rounded-[3rem] p-8 md:p-12 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center mb-10">
+              <span className="text-red-600 font-black text-[10px] uppercase tracking-[0.5em] mb-4 block">Let's Celebrate</span>
+              <h3 className="text-4xl md:text-5xl font-black tracking-tight leading-none mb-4">Book Your <span className="text-yellow-500 italic font-serif">Event</span></h3>
+              <p className="text-zinc-500 font-medium">Fill out the details below and we will get back to you with a custom party menu and quote!</p>
+            </div>
+            
+            {inquiryStatus === 'success' ? (
+              <div className="bg-green-50 text-green-700 p-10 rounded-3xl text-center border-2 border-green-200">
+                <div className="text-6xl mb-4">🎉</div>
+                <h4 className="text-2xl font-black mb-2">Request Received!</h4>
+                <p className="font-medium">We'll review your details and call you shortly to plan the perfect menu.</p>
+                <button onClick={() => setInquiryStatus('idle')} className="mt-8 bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors">Book Another Event</button>
+              </div>
+            ) : (
+              <form onSubmit={handleInquirySubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Your Name</label>
+                    <input required type="text" value={inquiryForm.name} onChange={e => setInquiryForm({...inquiryForm, name: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold" placeholder="e.g. Rahul Das" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Phone Number</label>
+                    <input required type="tel" value={inquiryForm.phone} onChange={e => setInquiryForm({...inquiryForm, phone: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold" placeholder="e.g. +91 98765 43210" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Event Type</label>
+                    <select required value={inquiryForm.event_type} onChange={e => setInquiryForm({...inquiryForm, event_type: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold appearance-none">
+                      <option>Birthday</option>
+                      <option>Marriage / Reception</option>
+                      <option>Anniversary</option>
+                      <option>Corporate Event</option>
+                      <option>Casual Get-together</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Date</label>
+                    <input required type="date" value={inquiryForm.event_date} onChange={e => setInquiryForm({...inquiryForm, event_date: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold text-zinc-700" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Total Guests</label>
+                    <input required type="number" min="1" value={inquiryForm.guests} onChange={e => setInquiryForm({...inquiryForm, guests: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold" placeholder="e.g. 50" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Special Requests (Optional)</label>
+                  <textarea value={inquiryForm.notes} onChange={e => setInquiryForm({...inquiryForm, notes: e.target.value})} className="w-full bg-zinc-50 border-2 border-zinc-100 rounded-xl px-4 py-4 focus:outline-none focus:border-red-500 transition-colors font-bold min-h-[120px]" placeholder="Any specific dishes or dietary requirements?"></textarea>
+                </div>
+
+                {inquiryStatus === 'error' && <p className="text-red-500 text-sm font-bold text-center">Something went wrong. Please try again or call us.</p>}
+
+                <button disabled={inquiryStatus === 'submitting'} type="submit" className="w-full bg-red-600 hover:bg-black text-white font-black py-5 rounded-2xl shadow-xl transition-all active:scale-95 text-sm uppercase tracking-widest disabled:opacity-50">
+                  {inquiryStatus === 'submitting' ? 'Sending Request...' : 'Submit Inquiry →'}
+                </button>
+              </form>
+            )}
+          </div>
+        ) : categories.length === 0 ? (
           <div className="text-center py-32 opacity-50">
              <div className="text-8xl mb-6">🍽️</div>
              <p className="font-black uppercase tracking-[0.3em] text-xs text-white">Menu is being curated...</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { supabase } from "@/lib/supabaseClient";
@@ -13,6 +13,34 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [rewardCode, setRewardCode] = useState(null);
   const [message, setMessage] = useState("");
+
+  // Video State
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) videoRef.current.pause();
+      else videoRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) videoRef.current.requestFullscreen();
+      else if (videoRef.current.webkitRequestFullscreen) videoRef.current.webkitRequestFullscreen();
+      else if (videoRef.current.msRequestFullscreen) videoRef.current.msRequestFullscreen();
+    }
+  };
 
   const GOOGLE_REVIEW_URL = "https://g.page/r/CTaudV8wMFV0EAE/review"; // Placeholder, will guide user to update if needed
 
@@ -94,60 +122,156 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen selection:bg-red-200">
       {/* 🌟 PREMIUM HERO SECTION 🌟 */}
-      <section className="relative min-h-[95vh] flex items-center justify-center text-center overflow-hidden">
+      <section className="relative min-h-[85vh] md:min-h-[95vh] flex flex-col justify-center text-center overflow-hidden pt-24 pb-16 bg-zinc-950">
         {/* Optimized Next.js Image Background */}
         <NextImage
           src="/images/hero.png"
           alt="Banalata Bengali Dhaba"
           fill
           priority
-          className="object-cover z-0 scale-110 animate-subtle-zoom"
+          className="object-cover z-0 scale-110 animate-subtle-zoom opacity-30"
           sizes="100vw"
         />
 
-        {/* Dark Overlay to make text pop */}
-        <div className="absolute inset-0 bg-black/40 z-10"></div>
-        {/* Graded Radial Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/90 z-10"></div>
+        {/* Dark Overlays to make video and text pop */}
+        <div className="absolute inset-0 bg-black/60 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/80 z-10"></div>
 
-        <div className="container mx-auto px-4 relative z-20">
-
-          <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.85] drop-shadow-2xl">
-            Savor the <span className="text-red-500 italic font-serif">Soul</span> <br />
-            of <span className="underline decoration-yellow-400 decoration-8 underline-offset-8">Bengali</span>
-          </h1>
-
-          <p className="text-xl md:text-2xl text-zinc-300 mb-14 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-lg">
-            Where tradition meets passion. Hand-ground spices, heritage recipes, and a warm Dhaba welcome in the heart of the city.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-6 items-center">
-            <Link
-              href="/menu"
-              className="group bg-yellow-400 hover:bg-white text-black font-black py-6 px-14 rounded-3xl shadow-[0_10px_40px_rgba(251,191,36,0.3)] transition-all active:scale-95 text-lg flex items-center gap-3 w-full sm:w-auto text-center justify-center"
-            >
-              EXPLORE OUR MENU
-              <span className="group-hover:translate-x-2 transition-transform italic">→</span>
+        {/* Top links just under header */}
+        <div className="absolute top-6 left-0 w-full z-30 px-4">
+          <div className="container mx-auto flex flex-row justify-center gap-3 sm:gap-6 items-center text-[10px] sm:text-xs font-black tracking-widest uppercase">
+            <a href="tel:+919862452313" className="text-white hover:text-yellow-400 transition-all flex items-center gap-1.5 sm:gap-2 group bg-white/15 backdrop-blur-md px-4 sm:px-6 py-2.5 rounded-full border border-white/40 hover:border-yellow-400 hover:bg-white/25 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <span className="group-hover:-rotate-12 transition-transform text-sm sm:text-base">🛵</span> 
+              <span className="mt-0.5 drop-shadow-md">Delivery</span>
+            </a>
+            <Link href="/menu?type=party" className="text-white hover:text-red-400 transition-all flex items-center gap-1.5 sm:gap-2 group bg-white/15 backdrop-blur-md px-4 sm:px-6 py-2.5 rounded-full border border-white/40 hover:border-red-400 hover:bg-white/25 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <span className="group-hover:scale-110 transition-transform text-sm sm:text-base">🎉</span> 
+              <span className="mt-0.5 drop-shadow-md">Events</span>
             </Link>
-            <Link
-              href="/game"
-              className="bg-red-600 hover:bg-white text-white hover:text-red-600 font-black py-6 px-12 rounded-3xl transition-all active:scale-95 text-lg shadow-xl w-full sm:w-auto text-center justify-center"
-            >
-              🏆 PLAY & WIN REWARDS
-            </Link>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 relative z-20 flex-grow flex flex-col justify-center">
+
+          {/* New Video Hero Layout */}
+          <div className="max-w-4xl mx-auto mb-10 w-full">
+            <h1 className="mb-8 text-center relative z-20">
+              <span className="block text-xl sm:text-2xl md:text-3xl font-serif italic text-white font-medium tracking-wide drop-shadow-md mb-1 sm:mb-2">
+                The Authentic Taste of
+              </span>
+              <span className="block text-5xl sm:text-6xl md:text-7xl font-black relative inline-block tracking-tighter pb-1 sm:pb-2">
+                <span className="text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+                  Banalata
+                </span>
+                {/* Premium Glowing Tapered Underline */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[110%] h-[4px] sm:h-[6px] bg-gradient-to-r from-transparent via-red-600 to-transparent rounded-full shadow-[0_0_15px_rgba(220,38,38,0.8)]"></div>
+              </span>
+            </h1>
+            
+            {/* Premium Video Container */}
+            <div className="relative w-full aspect-video rounded-2xl md:rounded-[2rem] overflow-hidden shadow-[0_20px_50px_rgba(220,38,38,0.2)] border-2 sm:border-4 border-white/10 group bg-zinc-900">
+               {/* Subtle glowing background behind video */}
+               <div className="absolute -inset-4 bg-gradient-to-r from-red-600 to-yellow-500 rounded-[3rem] blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+               
+               <video 
+                 ref={videoRef}
+                 autoPlay 
+                 muted={isMuted}
+                 loop 
+                 playsInline 
+                 poster="/images/v2/hero-poster.png"
+                 className="relative z-10 w-full h-full object-cover"
+                 onClick={togglePlay}
+               >
+                 {/* Banalata promotional video source */}
+                 <source src="/videos/banalata.mp4" type="video/mp4" />
+               </video>
+
+               {/* Video Controls Overlay */}
+               <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 z-20 flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+                 <button onClick={togglePlay} className="text-white/60 hover:text-white transition-colors w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm text-[10px] sm:text-xs">
+                   {isPlaying ? (
+                     <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                   ) : (
+                     <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4"><path d="M8 5v14l11-7z"/></svg>
+                   )}
+                 </button>
+                 <button onClick={toggleMute} className="text-white/60 hover:text-white transition-colors w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm text-[10px] sm:text-xs">
+                   {isMuted ? (
+                     <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                   ) : (
+                     <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                   )}
+                 </button>
+                 <button onClick={toggleFullscreen} className="text-white/60 hover:text-white transition-colors w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-sm text-[10px] sm:text-xs">
+                   <svg fill="currentColor" viewBox="0 0 24 24" className="w-3 h-3 sm:w-4 sm:h-4"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                 </button>
+               </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 max-w-xl mx-auto w-full px-4 sm:px-6">
+            {/* First Row */}
+            <div className="flex flex-row justify-center gap-4 w-full">
+              <Link
+                href="/menu"
+                className="group bg-yellow-400 hover:bg-white text-black font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(251,191,36,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center gap-2 w-1/2"
+              >
+                MENU
+                <span className="group-hover:translate-x-1 transition-transform italic text-lg">→</span>
+              </Link>
+              <Link
+                href="/game"
+                className="bg-red-600 hover:bg-white text-white hover:text-red-600 font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(220,38,38,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center gap-2 w-1/2"
+              >
+                <span className="text-xl leading-none">🏆</span> PLAY & WIN
+              </Link>
+            </div>
+            
+            {/* Second Row */}
+            <div className="flex flex-row justify-center gap-4 w-full">
+              <a
+                href="#"
+                className="group bg-gradient-to-r from-[#fc8019] to-[#fd9945] hover:from-white hover:to-white text-white hover:text-[#fc8019] font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(252,128,25,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center w-1/2 tracking-widest border border-white/10 hover:border-[#fc8019]/30"
+              >
+                SWIGGY
+              </a>
+              <a
+                href="#"
+                className="group bg-gradient-to-r from-[#cb202d] to-[#e23744] hover:from-white hover:to-white text-white hover:text-[#cb202d] font-black py-4 sm:py-5 px-2 rounded-2xl shadow-[0_10px_30px_rgba(203,32,45,0.4)] transition-all active:scale-95 text-sm sm:text-base flex items-center justify-center w-1/2 tracking-widest border border-white/10 hover:border-[#cb202d]/30"
+              >
+                ZOMATO
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Floating Mouse Scroll Icon */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center p-1">
-            <div className="w-1 h-2 bg-white rounded-full"></div>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 animate-bounce opacity-50">
+          <div className="w-5 h-8 border border-white/30 rounded-full flex justify-center p-1">
+            <div className="w-1 h-1.5 bg-white rounded-full"></div>
           </div>
         </div>
       </section>
 
+      {/* 🛵 SLIM DELIVERY BANNER 🛵 */}
+      <div className="bg-zinc-900 py-4 relative z-30 shadow-[0_10px_30px_rgba(0,0,0,0.15)] border-y border-white/10">
+        <div className="container mx-auto px-4 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-6 text-white font-bold uppercase tracking-widest text-[10px] sm:text-xs">
+          <div className="flex items-center gap-3 text-yellow-400">
+            <span className="text-2xl animate-bounce drop-shadow-md">🛵</span>
+            <span>Cravings? We Deliver Fast.</span>
+          </div>
+          <span className="hidden sm:block text-zinc-600">|</span>
+          <div className="flex items-center gap-3">
+            <span>Now Available On</span>
+            <span className="bg-[#fc8019] text-white px-2.5 py-1 rounded shadow-[0_0_10px_rgba(252,128,25,0.4)]">SWIGGY</span>
+            <span className="bg-[#cb202d] text-white px-2.5 py-1 rounded shadow-[0_0_10px_rgba(203,32,45,0.4)]">ZOMATO</span>
+          </div>
+        </div>
+      </div>
+
       {/* 🥘 SIGNATURE DISHES (THE "EYE CANDY") 🥘 */}
-      <section className="py-32 px-4 bg-white relative">
+      <section className="py-16 md:py-24 px-4 bg-white relative">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-24">
             <span className="text-red-600 font-black text-sm uppercase tracking-[0.5em] mb-4 block">Hand-Picked Specialties</span>
@@ -195,7 +319,7 @@ export default function Home() {
       </section>
 
       {/* 📖 STORY SECTION (THE VIBE) 📖 */}
-      <section className="py-32 px-4 bg-zinc-50 overflow-hidden relative">
+      <section className="py-16 md:py-24 px-4 bg-zinc-50 overflow-hidden relative">
         {/* Subtle Brand Background */}
         <div className="absolute top-0 right-0 p-40 opacity-[0.03] select-none pointer-events-none rotate-45 text-9xl">BANALATA</div>
 
@@ -245,7 +369,7 @@ export default function Home() {
       </section>
 
       {/* 🎟️ REWARD CLAIM (SOCIAL PROOF) 🎟️ */}
-      <section className="py-32 px-4 bg-white relative overflow-hidden">
+      <section className="py-16 md:py-24 px-4 bg-white relative overflow-hidden">
         <div className="container mx-auto max-w-5xl">
           <div className="bg-yellow-50 rounded-[3rem] md:rounded-[5rem] shadow-xl border-4 border-yellow-200 p-8 md:p-24 relative overflow-hidden group">
             {/* Decorative background pulse */}
@@ -322,7 +446,7 @@ export default function Home() {
       </section>
 
       {/* 🌟 CUSTOMER REVIEWS (THE PROOF) 🌟 */}
-      <section className="py-32 px-4 bg-zinc-50">
+      <section className="py-16 md:py-24 px-4 bg-zinc-50">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
             <div className="max-w-xl">
@@ -362,7 +486,7 @@ export default function Home() {
 
 
       {/* 🥬 BRAND PROMISES 🥬 */}
-      <section className="py-24 px-4 bg-yellow-50/50">
+      <section className="py-16 md:py-20 px-4 bg-yellow-50/50">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {[

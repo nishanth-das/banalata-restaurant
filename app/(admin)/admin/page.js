@@ -55,6 +55,9 @@ export default function AdminPage() {
   const [galleryImage, setGalleryImage] = useState(null);
   const [galleryTab, setGalleryTab] = useState('pending'); // 'pending' or 'live'
 
+  // Inquiries State
+  const [inquiries, setInquiries] = useState([]);
+
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -74,6 +77,7 @@ export default function AdminPage() {
     fetchCoupons();
     fetchGallery();
     fetchProfiles();
+    fetchInquiries();
   };
 
   const fetchProfiles = async () => {
@@ -96,6 +100,11 @@ export default function AdminPage() {
     const approved = await fetchApprovedImages();
     setPendingImages(pending || []);
     setApprovedImages(approved || []);
+  };
+
+  const fetchInquiries = async () => {
+    const { data } = await supabase.from('party_inquiries').select('*').order('created_at', { ascending: false });
+    setInquiries(data || []);
   };
 
   const handleAdminGalleryUpload = async (e) => {

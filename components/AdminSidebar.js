@@ -22,6 +22,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
     { name: "Coupon Tracker", href: "/admin?tab=coupons", icon: "🎟️" },
     { name: "Customer CRM", href: "/admin?tab=customers", icon: "👥" },
     { name: "Gallery Moderation", href: "/admin?tab=gallery", icon: "📸" },
+    { name: "Event Leads", href: "/admin?tab=inquiries", icon: "🎉" },
     { name: "Settings", href: "#", icon: "⚙️", disabled: true },
   ];
 
