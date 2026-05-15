@@ -69,13 +69,17 @@ export default function Menu() {
 
   // Define a set of icons for categories
   const categoryIcons = {
-    'Beverages': '🍹',
-    'Main Course': '🥘',
-    'Starters': '🥟',
-    'Desserts': '🍨',
-    'Breads': '🫓',
-    'Thali': '🍛',
-    'default': '🍽️'
+    'Breakfast': '🍳', 'Soup': '🥣', 'Snacks': '🍟', 'Sandwich': '🥪', 
+    'Momos': '🥟', 'Rice': '🍚', 'Tea & Coffee': '☕', 
+    'Chinese Starter - Veg': '🥢', 'Chinese Starter - Non Veg': '🍗', 
+    'Daal': '🍲', 'Chinese Rice': '🥡', 'Chinese Gravy': '🥘', 
+    'Desi Style Meat': '🍖', 'Meat Indian Style': '🍛', 'Special Fish': '🐟', 
+    'Egg': '🥚', 'Sutki': '🌶️', 'Fry': '🍤', 'Salad': '🥗', 
+    'Roti': '🫓', 'Tandoori': '🍢', 'Roti/Naan': '🫓', 'Noodles': '🍜', 
+    'Biryani': '🥘', 'Desert': '🍨', 'Desserts': '🍨', 'Shakes': '🥤', 
+    'Mocktail': '🍹', 'Fresh Juice': '🧃', 'Chef\'s Special': '👨‍🍳', 
+    'Signature Item': '👑', 'Beverages': '🍹', 'Main Course': '🥘', 
+    'Starters': '🥟', 'Breads': '🫓', 'Thali': '🍛', 'default': '🍽️'
   };
 
   return (
@@ -166,6 +170,8 @@ export default function Menu() {
                           <div className="flex justify-between items-end gap-4">
                             <div className="flex-1">
                               <h4 className="text-xl md:text-2xl font-black text-white leading-tight mb-1 group-hover:text-yellow-400 transition-colors">
+                                {item.dietary_preference === 'veg' && <span className="text-green-500 mr-2 text-sm bg-white/10 px-1 py-0.5 rounded" title="Veg">🟢</span>}
+                                {item.dietary_preference === 'non-veg' && <span className="text-red-500 mr-2 text-sm bg-white/10 px-1 py-0.5 rounded" title="Non-Veg">🔴</span>}
                                 {item.name}
                               </h4>
                               <p className="text-white/60 text-xs md:text-sm line-clamp-1 mb-2 font-medium">
@@ -232,6 +238,8 @@ export default function Menu() {
                  <div className="p-8 md:p-12 text-black">
                     <div className="flex justify-between items-start mb-6">
                        <h3 className="text-4xl font-black text-zinc-900 tracking-tighter uppercase leading-none">
+                         {selectedItem.dietary_preference === 'veg' && <span className="text-green-600 mr-3 text-2xl" title="Veg">🟢</span>}
+                         {selectedItem.dietary_preference === 'non-veg' && <span className="text-red-600 mr-3 text-2xl" title="Non-Veg">🔴</span>}
                          {selectedItem.name}
                        </h3>
                        <span className="text-3xl font-black text-red-600 tracking-tighter leading-none">₹{selectedItem.price}</span>

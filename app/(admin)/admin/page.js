@@ -9,6 +9,14 @@ import { ADMIN_EMAILS } from "@/lib/admins";
 import { fetchPendingImages, moderateImage } from "@/lib/gallery";
 import { processMenuImage } from "@/lib/imageProcessor";
 
+const MENU_CATEGORIES = [
+  "Breakfast", "Soup", "Snacks", "Sandwich", "Momos", "Rice", "Tea & Coffee", 
+  "Chinese Starter - Veg", "Chinese Starter - Non Veg", "Daal", "Chinese Rice", 
+  "Chinese Gravy", "Desi Style Meat", "Meat Indian Style", "Special Fish", "Egg", 
+  "Sutki", "Fry", "Salad", "Roti", "Tandoori", "Roti/Naan", "Noodles", "Biryani", 
+  "Desert", "Shakes", "Mocktail", "Fresh Juice", "Chef's Special", "Signature Item"
+];
+
 export default function AdminPage() {
   const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
@@ -23,10 +31,11 @@ export default function AdminPage() {
   const [menuForm, setMenuForm] = useState({ 
     id: null, 
     name: "", 
-    category: "Starters", 
+    category: "Breakfast", 
     price: "", 
     description: "", 
     menu_type: "regular",
+    dietary_preference: "none",
     image_url: "" 
   });
   const [menuImage, setMenuImage] = useState(null);
@@ -141,6 +150,7 @@ export default function AdminPage() {
         price: parseInt(menuForm.price),
         description: menuForm.description,
         menu_type: menuForm.menu_type,
+        dietary_preference: menuForm.dietary_preference,
         image_url: finalImageUrl
       };
 
@@ -153,7 +163,7 @@ export default function AdminPage() {
 
       if (result.error) throw result.error;
 
-      setMenuForm({ id: null, name: "", category: "Starters", price: "", description: "", menu_type: "regular", image_url: "" });
+      setMenuForm({ id: null, name: "", category: "Breakfast", price: "", description: "", menu_type: "regular", dietary_preference: "none", image_url: "" });
       setMenuImage(null);
       setMenuImagePreview(null);
       setIsCustomCategory(false);
@@ -312,11 +322,10 @@ export default function AdminPage() {
                       value={isCustomCategory ? "CUSTOM" : menuForm.category} 
                       onChange={handleCategoryChange}
                     >
-                      <option value="Starters">Starters</option>
-                      <option value="Main Course">Main Course</option>
-                      <option value="Desserts">Desserts</option>
-                      <option value="Beverages">Beverages</option>
-                      {existingCategories.filter(c => !["Starters", "Main Course", "Desserts", "Beverages"].includes(c)).map(c => (
+                      {MENU_CATEGORIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                      {existingCategories.filter(c => !MENU_CATEGORIES.includes(c)).map(c => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                       <option value="CUSTOM" className="text-red-600 font-bold">+ New Category...</option>
@@ -354,6 +363,28 @@ export default function AdminPage() {
                       onClick={() => setMenuForm({...menuForm, menu_type: 'party'})}
                       className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.menu_type === 'party' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
                     >Party Package</button>
+                  </div>
+
+                  {/* Dietary Preference Toggle */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Dietary Preference</label>
+                    <div className="flex bg-zinc-100 p-1 rounded-2xl">
+                      <button
+                        type="button"
+                        onClick={() => setMenuForm({...menuForm, dietary_preference: 'veg'})}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.dietary_preference === 'veg' ? 'bg-white text-green-600 shadow-sm' : 'text-zinc-400'}`}
+                      >🟢 Veg</button>
+                      <button
+                        type="button"
+                        onClick={() => setMenuForm({...menuForm, dietary_preference: 'non-veg'})}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.dietary_preference === 'non-veg' ? 'bg-white text-red-600 shadow-sm' : 'text-zinc-400'}`}
+                      >🔴 Non-Veg</button>
+                      <button
+                        type="button"
+                        onClick={() => setMenuForm({...menuForm, dietary_preference: 'none'})}
+                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${menuForm.dietary_preference === 'none' ? 'bg-white text-zinc-600 shadow-sm' : 'text-zinc-400'}`}
+                      >⚪ N/A</button>
+                    </div>
                   </div>
 
                   {/* Image Upload */}
@@ -394,7 +425,7 @@ export default function AdminPage() {
                   </button>
                   {menuForm.id && (
                     <button 
-                      type="button" onClick={() => { setMenuForm({ id: null, name: "", category: "Starters", price: "", description: "" }); setIsCustomCategory(false); }}
+                      type="button" onClick={() => { setMenuForm({ id: null, name: "", category: "Breakfast", price: "", description: "", menu_type: "regular", dietary_preference: "none", image_url: "" }); setIsCustomCategory(false); setMenuImagePreview(null); }}
                       className="w-full bg-zinc-100 text-zinc-500 font-bold py-2 rounded-xl text-xs uppercase tracking-widest"
                     >Cancel Edit</button>
                   )}
@@ -412,7 +443,11 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-lg font-black text-zinc-800 tracking-tight leading-none uppercase">{item.name}</h4>
+                        <h4 className="text-lg font-black text-zinc-800 tracking-tight leading-none uppercase">
+                          {item.dietary_preference === 'veg' && <span className="text-green-500 mr-2 text-sm">🟢</span>}
+                          {item.dietary_preference === 'non-veg' && <span className="text-red-500 mr-2 text-sm">🔴</span>}
+                          {item.name}
+                        </h4>
                         <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${item.menu_type === 'party' ? 'bg-red-600 text-white' : 'bg-zinc-200 text-zinc-500'}`}>
                           {item.menu_type}
                         </span>
