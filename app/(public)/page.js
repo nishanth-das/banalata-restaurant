@@ -106,9 +106,12 @@ export default function Home() {
         .getPublicUrl(filePath);
 
       // Claim from pool OR generate new with proof URL
-      const claimedCode = await claimRandomCouponFromPool(user.id, 'review', publicUrl);
-
-      setRewardCode(claimedCode);
+      const claimedCoupon = await claimRandomCouponFromPool(user.id, 'review', publicUrl);
+      if (claimedCoupon) {
+        setRewardCode(claimedCoupon.coupon_code);
+      } else {
+        alert("Thanks for your review! We will send you a coupon soon.");
+      }
       setMessage("Congratulations! Your review coupon is ready.");
 
     } catch (error) {

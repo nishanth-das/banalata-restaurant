@@ -43,7 +43,7 @@ export default function AdminPage() {
   
   // Coupon State
   const [coupons, setCoupons] = useState([]);
-  const [couponForm, setCouponForm] = useState({ code: "", source: "manual", expires_at: "" });
+  const [couponForm, setCouponForm] = useState({ code: "", source: "manual", expires_at: "", reward_text: "" });
 
   // Customers State
   const [profiles, setProfiles] = useState([]);
@@ -223,13 +223,14 @@ export default function AdminPage() {
   const handleCouponSubmit = async (e) => {
     e.preventDefault();
     try {
-      // If creating for a pool (game/review), userId is null
-      const targetUserId = (couponForm.source === 'game' || couponForm.source === 'review') ? null : user.id;
+      // If creating for a pool, userId is null
+      const isPool = couponForm.source !== 'manual';
+      const targetUserId = isPool ? null : user.id;
       
       const expiresAt = couponForm.expires_at ? new Date(couponForm.expires_at).toISOString() : null;
 
-      await saveCoupon(targetUserId, couponForm.code || generateCouponCode(), couponForm.source, null, expiresAt);
-      setCouponForm({ code: "", source: "manual", expires_at: "" });
+      await saveCoupon(targetUserId, couponForm.code || generateCouponCode(), couponForm.source, null, expiresAt, couponForm.reward_text);
+      setCouponForm({ code: "", source: "manual", expires_at: "", reward_text: "" });
       fetchCoupons();
       alert("Coupon Added Successfully!");
     } catch (err) {
@@ -601,7 +602,8 @@ export default function AdminPage() {
                       value={couponForm.source} onChange={e => setCouponForm({ ...couponForm, source: e.target.value })}
                     >
                       <option value="manual">Manual Admin Code</option>
-                      <option value="game">Game Reward Pool 🎮</option>
+                      <option value="game_minor">Game Pool: Minor Reward (Levels 1-9) 🍫</option>
+                      <option value="game_grand">Game Pool: Grand Prize (Level 10) 🏆</option>
                       <option value="review">Review Reward Pool 🌟</option>
                     </select>
                   </div>
@@ -610,6 +612,12 @@ export default function AdminPage() {
                     type="text" placeholder="Custom Code (Optional)"
                     className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-yellow-500 outline-none font-bold"
                     value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value })}
+                  />
+
+                  <input
+                    type="text" placeholder="Reward Description (e.g. Free Munch or 15% OFF)"
+                    className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-yellow-500 outline-none font-bold text-zinc-800"
+                    value={couponForm.reward_text} onChange={e => setCouponForm({ ...couponForm, reward_text: e.target.value })}
                   />
 
                   <div className="space-y-2">
@@ -656,6 +664,7 @@ export default function AdminPage() {
                          </div>
                          <div>
                             <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{cp.source}</span>
+                            {cp.reward_text && <span className="block text-sm font-bold text-yellow-600 mb-1">{cp.reward_text}</span>}
                             <div className="flex items-center gap-2">
                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                                <span className="text-[11px] font-bold text-zinc-600 uppercase">Infinite Template</span>
@@ -691,11 +700,16 @@ export default function AdminPage() {
                     return (
                     <div key={cp.id} className="bg-white/5 p-5 rounded-2xl border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                        <div>
-                         <div className="flex items-center gap-3 mb-1">
-                           <div className="text-lg font-black text-yellow-400 tracking-wider">
-                             {cp.coupon_code}
+                         <div className="flex flex-col items-start gap-1 mb-1">
+                           <div className="flex items-center gap-3">
+                             <div className="text-lg font-black text-yellow-400 tracking-wider">
+                               {cp.coupon_code}
+                             </div>
+                             <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white uppercase tracking-widest">{cp.source}</span>
                            </div>
-                           <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-white uppercase tracking-widest">{cp.source}</span>
+                           {cp.reward_text && (
+                             <span className="text-sm font-bold text-red-400">{cp.reward_text}</span>
+                           )}
                          </div>
                          <div className="text-sm font-bold text-zinc-300">
                            {prof ? `${prof.full_name} • ${prof.phone_number}` : 'Unknown Customer'}
