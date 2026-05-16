@@ -45,9 +45,8 @@ export default function GalleryClient({ initialData }) {
         successCount++;
       }
       
-      setMessage(`🎉 ${successCount} photos submitted! They will appear after Admin approval.`);
+      setMessage(`success_submitted`);
       setForm({ files: [], description: "" });
-      setTimeout(() => setIsModalOpen(false), 3000);
     } catch (err) {
       setMessage("Error: " + err.message);
     } finally {
@@ -105,10 +104,7 @@ export default function GalleryClient({ initialData }) {
                   alt={`Banalata Dhaba: ${img.description}`} 
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110 min-h-[300px]"
                />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
-                  <p className="text-white font-serif italic text-lg mb-2 leading-tight">"{img.description}"</p>
-                  <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest">Captured on {new Date(img.created_at).toLocaleDateString()}</p>
-               </div>
+               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
             </div>
           ))}
         </div>
@@ -119,9 +115,26 @@ export default function GalleryClient({ initialData }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
            <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.5)] w-full max-w-lg relative animate-in zoom-in-95 duration-500 overflow-y-auto max-h-[90vh]">
               <button 
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => { setIsModalOpen(false); setMessage(""); }}
                 className="absolute top-6 right-6 md:top-8 md:right-8 text-zinc-400 hover:text-zinc-900 transition-colors text-2xl z-20"
               >✕</button>
+
+              {message === 'success_submitted' ? (
+                 <div className="text-center py-8">
+                    <div className="text-6xl mb-6">🎉</div>
+                    <h3 className="text-3xl font-black text-zinc-900 mb-4 tracking-tighter">Awesome!</h3>
+                    <p className="text-zinc-600 font-medium leading-relaxed mb-8">
+                       Your pictures will be live on Banalata's Signature Gallery once the owner/admin approves them. Thank you for sharing your moment with us!
+                    </p>
+                    <button 
+                      onClick={() => { setIsModalOpen(false); setMessage(""); }}
+                      className="bg-zinc-900 hover:bg-black text-white font-black py-4 px-8 rounded-2xl shadow-xl transition-all active:scale-95 text-xs uppercase tracking-widest w-full"
+                    >
+                       Got it, thanks!
+                    </button>
+                 </div>
+              ) : (
+                <>
 
               <h3 className="text-2xl md:text-3xl font-black text-zinc-900 mb-6 md:mb-8 tracking-tighter">New <span className="text-yellow-500 italic font-serif">Community post</span></h3>
               
@@ -163,11 +176,13 @@ export default function GalleryClient({ initialData }) {
                     {uploading ? "Optimizing & Uploading..." : "POST TO GALLERY →"}
                  </button>
                  
-                 <p className="text-[10px] text-center text-zinc-400 font-medium px-4">
-                    *Your photo will be optimized to WebP and reviewed by our team before going live.
-                 </p>
-              </div>
-           </div>
+                  <p className="text-[10px] text-center text-zinc-400 font-medium px-4">
+                     *Your photo will be optimized to WebP and reviewed by our team before going live.
+                  </p>
+               </div>
+              </>
+              )}
+            </div>
         </div>
       )}
       {/* 🎭 THEATER MODE LIGHTBOX 🎭 */}
@@ -186,8 +201,26 @@ export default function GalleryClient({ initialData }) {
                 className="absolute -top-12 right-0 md:-right-12 text-white/50 hover:text-white transition-all text-4xl font-light"
               >✕</button>
 
-              <div className="w-full h-full rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/10 flex items-center justify-center bg-zinc-900/50">
-                 <img src={selectedImage.image_url} alt="Large View" className="max-w-full max-h-[80vh] object-contain" />
+              <div className="relative flex items-center justify-center w-full px-12 md:px-0">
+                 <img src={selectedImage.image_url} alt="Large View" className="max-w-full max-h-[75vh] object-contain rounded-[2rem] shadow-2xl border-4 border-white/10 bg-black/50" />
+                 
+                 {/* Navigation Buttons */}
+                 {images.findIndex(img => img.id === selectedImage.id) > 0 && (
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); setSelectedImage(images[images.findIndex(img => img.id === selectedImage.id) - 1]); }}
+                     className="absolute left-0 md:-left-12 w-12 h-12 flex items-center justify-center bg-black/50 hover:bg-black text-white rounded-full backdrop-blur-md transition-all border border-white/20 z-10 shadow-xl"
+                   >
+                     <span className="text-2xl transform -translate-x-0.5">‹</span>
+                   </button>
+                 )}
+                 {images.findIndex(img => img.id === selectedImage.id) < images.length - 1 && (
+                   <button 
+                     onClick={(e) => { e.stopPropagation(); setSelectedImage(images[images.findIndex(img => img.id === selectedImage.id) + 1]); }}
+                     className="absolute right-0 md:-right-12 w-12 h-12 flex items-center justify-center bg-black/50 hover:bg-black text-white rounded-full backdrop-blur-md transition-all border border-white/20 z-10 shadow-xl"
+                   >
+                     <span className="text-2xl transform translate-x-0.5">›</span>
+                   </button>
+                 )}
               </div>
 
               <div className="mt-8 text-center px-4">

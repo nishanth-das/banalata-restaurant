@@ -52,7 +52,7 @@ export default function AdminPage() {
   const [pendingImages, setPendingImages] = useState([]);
   const [approvedImages, setApprovedImages] = useState([]);
   const [galleryUploadForm, setGalleryUploadForm] = useState({ description: "" });
-  const [galleryImage, setGalleryImage] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
   const [galleryTab, setGalleryTab] = useState('pending'); // 'pending' or 'live'
 
   // Inquiries State
@@ -109,14 +109,16 @@ export default function AdminPage() {
 
   const handleAdminGalleryUpload = async (e) => {
     e.preventDefault();
-    if (!galleryImage) return alert("Select an image first!");
+    if (galleryImages.length === 0) return alert("Select at least one image first!");
     setLoading(true);
     try {
-      await uploadGalleryImage(galleryImage, galleryUploadForm.description, user.id, true);
-      setGalleryImage(null);
+      for (const file of galleryImages) {
+        await uploadGalleryImage(file, galleryUploadForm.description, user.id, true);
+      }
+      setGalleryImages([]);
       setGalleryUploadForm({ description: "" });
       fetchGallery();
-      alert("Photo uploaded directly to live gallery!");
+      alert(`🎉 ${galleryImages.length} photo(s) uploaded directly to live gallery!`);
     } catch (err) {
       alert("Upload failed: " + err.message);
     } finally {
@@ -669,14 +671,18 @@ export default function AdminPage() {
                  <h3 className="text-2xl font-black text-zinc-900 mb-8 uppercase tracking-tighter">Admin <span className="text-red-600 italic">Direct Upload</span></h3>
                  <form onSubmit={handleAdminGalleryUpload} className="space-y-6">
                     <div className="aspect-video bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-3xl flex items-center justify-center relative overflow-hidden group">
-                       {galleryImage ? (
-                         <img src={URL.createObjectURL(galleryImage)} className="w-full h-full object-cover" />
+                       {galleryImages && galleryImages.length > 0 ? (
+                         <div className="flex flex-wrap justify-center gap-2 w-full h-full p-4 overflow-y-auto">
+                            {galleryImages.map((img, i) => (
+                              <img key={i} src={URL.createObjectURL(img)} className="w-16 h-16 object-cover rounded-xl border border-zinc-200 shadow-sm" />
+                            ))}
+                         </div>
                        ) : (
-                         <span className="text-zinc-300 font-black uppercase tracking-widest text-xs">Drop Photo Here</span>
+                         <span className="text-zinc-300 font-black uppercase tracking-widest text-xs text-center px-4">Drop Photos Here<br/>(Multiple allowed)</span>
                        )}
                        <input 
-                         type="file" accept="image/*" required
-                         onChange={e => setGalleryImage(e.target.files[0])}
+                         type="file" accept="image/*" multiple required
+                         onChange={e => setGalleryImages(Array.from(e.target.files))}
                          className="absolute inset-0 opacity-0 cursor-pointer"
                        />
                     </div>

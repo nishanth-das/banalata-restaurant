@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabaseClient';
 import GalleryClient from './GalleryClient';
 
+export const dynamic = 'force-dynamic';
+
 // 🌟 DYNAMIC SEO 🌟
 // This helps Google index your restaurant's popular dishes based on real user photos!
 export async function generateMetadata() {
