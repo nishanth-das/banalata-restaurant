@@ -6,7 +6,7 @@ import { generateCouponCode, saveCoupon } from "@/lib/coupon";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ADMIN_EMAILS } from "@/lib/admins";
-import { fetchPendingImages, moderateImage } from "@/lib/gallery";
+import { fetchPendingImages, moderateImage, fetchApprovedImages } from "@/lib/gallery";
 import { processMenuImage } from "@/lib/imageProcessor";
 
 const MENU_CATEGORIES = [
@@ -23,7 +23,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   
   // Use searchParams or default to menu
-  const activeTab = searchParams.get('tab') || "menu";
+  const activeTab = searchParams.get('tab') || "dashboard";
   
   // Menu State
   const [menuItems, setMenuItems] = useState([]);
@@ -320,7 +320,103 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto">
-        {activeTab === 'menu' ? (
+        {activeTab === 'dashboard' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Quick Stats Summary */}
+            <div className="col-span-1 lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 text-center">
+                <div className="text-4xl mb-2">👥</div>
+                <div className="text-3xl font-black text-zinc-800">{profiles.length}</div>
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Total Customers</div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 text-center">
+                <div className="text-4xl mb-2">🎟️</div>
+                <div className="text-3xl font-black text-yellow-500">{coupons.filter(c => c.user_id).length}</div>
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Coupons Claimed</div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 text-center">
+                <div className="text-4xl mb-2">🎁</div>
+                <div className="text-3xl font-black text-blue-500">{coupons.filter(c => !c.user_id).length}</div>
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Active Templates</div>
+              </div>
+              <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 text-center">
+                <div className="text-4xl mb-2">🥘</div>
+                <div className="text-3xl font-black text-red-500">{menuItems.length}</div>
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Menu Items</div>
+              </div>
+            </div>
+
+            {/* Recent Claims Widget */}
+            <div className="bg-zinc-900 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative flex flex-col h-[500px]">
+              <div className="absolute top-0 right-0 p-8 opacity-10 text-6xl">🎟️</div>
+              <div className="flex items-center justify-between mb-8 relative z-10 shrink-0">
+                 <h3 className="text-xl font-black uppercase text-white tracking-tight">Recent Claims</h3>
+                 <Link href="/admin?tab=coupons" className="bg-white/10 hover:bg-white/20 text-[10px] font-black px-4 py-2 rounded-full text-zinc-300 transition-colors uppercase tracking-widest leading-none">
+                   View All
+                 </Link>
+              </div>
+              
+              <div className="space-y-3 relative z-10 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                {coupons.filter(c => c.user_id).slice(0, 15).map(cp => {
+                  const prof = profiles.find(p => p.id === cp.user_id);
+                  return (
+                  <div key={cp.id} className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                     <div>
+                       <div className="flex flex-col items-start gap-1 mb-1">
+                         <div className="flex items-center gap-2">
+                           <div className="text-sm font-black text-yellow-400 tracking-wider">
+                             {cp.coupon_code}
+                           </div>
+                           <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white uppercase tracking-widest">{cp.source}</span>
+                         </div>
+                         {cp.reward_text && (
+                           <span className="text-xs font-bold text-red-400">{cp.reward_text}</span>
+                         )}
+                       </div>
+                       <div className="text-xs font-medium text-zinc-400">
+                         {prof ? `${prof.full_name} • ${prof.phone_number}` : 'Unknown Customer'}
+                       </div>
+                     </div>
+                     <div className="shrink-0">
+                       <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase ${cp.is_redeemed ? 'bg-zinc-800 text-zinc-500' : 'bg-green-500/20 text-green-400'}`}>
+                         {cp.is_redeemed ? 'Used' : 'Active'}
+                       </span>
+                     </div>
+                  </div>
+                )})}
+                {coupons.filter(c => c.user_id).length === 0 && <div className="text-center py-10 text-zinc-600 font-bold uppercase tracking-widest text-xs">No claims yet</div>}
+              </div>
+            </div>
+
+            {/* Customer List Widget */}
+            <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-zinc-100 flex flex-col h-[500px]">
+               <div className="flex items-center justify-between mb-8 shrink-0">
+                  <h3 className="text-xl font-black uppercase text-zinc-800 tracking-tight">Newest Customers</h3>
+                  <Link href="/admin?tab=customers" className="bg-zinc-100 hover:bg-zinc-200 text-[10px] font-black px-4 py-2 rounded-full text-zinc-500 transition-colors uppercase tracking-widest leading-none">
+                    View CRM
+                  </Link>
+               </div>
+               
+               <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                 {profiles.slice(0, 15).map(p => {
+                    const userCoupons = coupons.filter(c => c.user_id === p.id);
+                    return (
+                    <div key={p.id} className="bg-zinc-50 p-4 rounded-2xl border border-zinc-100 flex items-center justify-between">
+                       <div>
+                          <h4 className="font-bold text-zinc-800 text-sm">{p.full_name}</h4>
+                          <p className="text-[10px] text-zinc-500 font-medium tracking-wide mt-0.5">{p.phone_number}</p>
+                       </div>
+                       <div className="text-right">
+                          <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">Wins</div>
+                          <div className="text-sm font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-md inline-block">{userCoupons.length}</div>
+                       </div>
+                    </div>
+                 )})}
+                 {profiles.length === 0 && <div className="text-center py-10 text-zinc-400 font-bold uppercase tracking-widest text-xs">No customers yet</div>}
+               </div>
+            </div>
+          </div>
+        ) : activeTab === 'menu' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Form */}
             <div className="lg:col-span-1">
@@ -665,7 +761,7 @@ export default function AdminPage() {
                    </span>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {coupons.filter(c => !c.user_id).map(cp => (
                     <div key={cp.id} className="group bg-zinc-50 hover:bg-white p-6 rounded-3xl border border-transparent hover:border-yellow-100 hover:shadow-xl transition-all flex items-center justify-between">
                        <div className="flex items-center gap-6">
@@ -704,7 +800,7 @@ export default function AdminPage() {
                    </span>
                 </div>
                 
-                <div className="space-y-4 relative z-10">
+                <div className="space-y-4 relative z-10 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                   {coupons.filter(c => c.user_id).slice(0, 10).map(cp => {
                     const prof = profiles.find(p => p.id === cp.user_id);
                     return (
