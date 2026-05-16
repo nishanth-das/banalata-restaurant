@@ -229,7 +229,17 @@ export default function AdminPage() {
       
       const expiresAt = couponForm.expires_at ? new Date(couponForm.expires_at).toISOString() : null;
 
-      await saveCoupon(targetUserId, couponForm.code || generateCouponCode(), couponForm.source, null, expiresAt, couponForm.reward_text);
+      let finalCode = couponForm.code;
+      if (!finalCode) {
+        if (couponForm.reward_text) {
+          // e.g. "Free Munch" -> "FREE-MUNCH"
+          finalCode = couponForm.reward_text.toUpperCase().trim().replace(/\s+/g, '-').replace(/[^A-Z0-9-]/g, '');
+        } else {
+          finalCode = generateCouponCode();
+        }
+      }
+
+      await saveCoupon(targetUserId, finalCode, couponForm.source, null, expiresAt, couponForm.reward_text);
       setCouponForm({ code: "", source: "manual", expires_at: "", reward_text: "" });
       fetchCoupons();
       alert("Coupon Added Successfully!");
